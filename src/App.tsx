@@ -62,6 +62,7 @@ export default function App() {
   const [correctTotal, setCorrectTotal] = useState(0);
   const [correctWords, setCorrectWords] = useState<string[]>([]);
   const [isFalling, setIsFalling] = useState(false);
+  const lastProcessedWord = useRef<string>('');
 
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
   const voices = useRef<SpeechSynthesisVoice[]>([]);
@@ -155,12 +156,20 @@ export default function App() {
     const normalizedCorrect = currentWord.trim().replace(/[^\w\s]|_/g, "").toLowerCase();
 
     if (normalizedGuess === normalizedCorrect) {
+      // Prevent double-processing if already handled (e.g. from rapid Enter key presses)
+      if (lastProcessedWord.current === currentWord) return;
+      lastProcessedWord.current = currentWord;
+
       const timeTaken = (Date.now() - wordStartTime) / 1000;
       setTotalTime(prev => prev + timeTaken);
       setCorrectTotal(prev => prev + 1);
       
       setStreak(prev => prev + 1);
-      setCorrectWords(prev => [currentWord, ...prev].slice(0, 50));
+      setCorrectWords(prev => {
+        // Prevent duplicate consecutive entries of the same word (e.g. from double-submits)
+        if (prev[0] === currentWord) return prev;
+        return [currentWord, ...prev].slice(0, 50);
+      });
       setIsFalling(false);
       
       await sounds.playCorrect();
@@ -321,8 +330,9 @@ export default function App() {
                 key={`${word}-${idx}`}
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
-                className="text-[10px] font-bold text-stone-600 whitespace-nowrap bg-white px-1.5 py-0.5 rounded border border-stone-200"
+                className="text-[10px] font-bold text-green-600 whitespace-nowrap bg-white px-1.5 py-0.5 rounded border border-green-200 flex items-center gap-1 shadow-sm"
               >
+                <Check size={10} strokeWidth={3} className="shrink-0" />
                 {word}
               </motion.span>
             ))}
@@ -379,8 +389,6 @@ export default function App() {
                       newUserInput[idx] = '';
                       setUserInput(newUserInput.join(''));
                     }
-                  } else if (e.key === 'Enter') {
-                    handleSubmit();
                   }
                 }}
                 autoComplete="off"
