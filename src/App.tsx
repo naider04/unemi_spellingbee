@@ -392,68 +392,69 @@ export default function App() {
             </button>
           </div>
 
-          <div className="flex flex-wrap justify-center gap-1.5 min-h-[60px]">
-            {Array.from({ length: userInput.length + 2 }).map((_, idx) => (
-              <input
-                key={`${idx}-${currentWord}`}
-                ref={(el) => (inputRefs.current[idx] = el)}
-                id={`char-${idx}-${currentWord}`}
-                name={`char-box-${idx}`}
-                type="text"
-                maxLength={1}
-                value={userInput[idx] || ''}
-                onChange={(e) => {
-                  const val = e.target.value.toLowerCase().replace(/[^a-z]/g, '');
-                  if (!val) return;
-                  
-                  const newUserInput = userInput.split('');
-                  newUserInput[idx] = val;
-                  const joined = newUserInput.join('');
-                  setUserInput(joined);
-                  
-                  // Focus next box
-                  setTimeout(() => {
-                    inputRefs.current[idx + 1]?.focus();
-                  }, 10);
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === 'Backspace') {
-                    if (!userInput[idx] && idx > 0) {
-                      const newUserInput = userInput.split('');
-                      newUserInput[idx - 1] = '';
-                      setUserInput(newUserInput.join(''));
-                      inputRefs.current[idx - 1]?.focus();
-                    } else {
-                      const newUserInput = userInput.split('');
-                      newUserInput[idx] = '';
-                      setUserInput(newUserInput.join(''));
-                    }
+          {/* Magical Hidden Input Bridge */}
+          <div className="relative w-full max-w-xl mx-auto group">
+            {/* Functional Dotted Input (Hidden but focusable) */}
+            <input
+              ref={(el) => (inputRefs.current[0] = el)}
+              type="text"
+              value={userInput.split("").join(".") + (userInput.length > 0 ? "." : "")}
+              onChange={(e) => {
+                const val = e.target.value;
+                const currentDisplay = userInput.split("").join(".") + (userInput.length > 0 ? "." : "");
+                
+                if (val.length > currentDisplay.length) {
+                  const cleanVal = val.replace(/\./g, "").replace(/[^a-zA-Z]/g, "");
+                  if (cleanVal.length > userInput.length) {
+                    setUserInput(cleanVal);
                   }
-                }}
-                autoComplete="off"
-                autoCorrect="off"
-                spellCheck="false"
-                autoCapitalize="none"
-                inputMode="text"
-                className={`w-8 h-12 text-center text-xl font-black rounded-lg border-2 transition-all p-0 focus:outline-none uppercase ${
-                  userInput.length === idx 
-                    ? 'border-yellow-400 bg-yellow-50 shadow-[0px_0px_10px_rgba(250,204,21,0.2)]' 
-                    : 'border-stone-800 bg-white'
-                } ${userInput.length > idx ? 'bg-stone-50 border-stone-300' : ''} ${
-                  idx === userInput.length ? 'opacity-60' : 
-                  idx === userInput.length + 1 ? 'opacity-30' : 'opacity-100'
-                }`}
-                style={{ caretColor: 'transparent' }}
-              />
-            ))}
+                }
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Backspace") {
+                  e.preventDefault();
+                  setUserInput(prev => prev.slice(0, -1));
+                }
+                if (e.key === "Enter") {
+                  handleSubmit();
+                }
+              }}
+              className="absolute inset-0 opacity-0 cursor-default pointer-events-none"
+              autoComplete="off"
+              autoCorrect="off"
+              spellCheck="false"
+              aria-hidden="true"
+            />
+
+            {/* Main Word Construction Box */}
+            <div 
+              className="w-full bg-white border-2 border-stone-800 rounded-xl p-3 min-h-[56px] flex items-center justify-center cursor-text shadow-[3px_3px_0px_0px_rgba(28,25,23,1)] hover:shadow-[1px_1px_0px_0px_rgba(28,25,23,1)] hover:translate-x-0.5 hover:translate-y-0.5 transition-all group-focus-within:ring-4 group-focus-within:ring-yellow-400/20"
+              onClick={() => inputRefs.current[0]?.focus()}
+            >
+              <div className="flex items-center text-xl font-bold text-stone-900 tracking-tight font-sans">
+                <span className="whitespace-pre">{userInput}</span>
+                <motion.div 
+                  animate={{ opacity: [1, 0, 1] }}
+                  transition={{ duration: 1, repeat: Infinity, ease: "steps(2)" }}
+                  className="w-[1.5px] h-6 bg-stone-900 ml-0.5" 
+                />
+              </div>
+            </div>
+            
+            <p className="text-center mt-2 text-[9px] font-bold text-stone-400 uppercase tracking-widest">
+              TAP TO TYPE
+            </p>
           </div>
 
-          <button 
-            onClick={() => handleSubmit()}
-            className="w-full p-3 bg-stone-900 text-yellow-400 font-black text-lg rounded-xl shadow-[2px_2px_0px_0px_rgba(156,163,175,0.5)] hover:bg-stone-800 active:translate-y-1 active:shadow-none transition-all"
-          >
-            ENTER
-          </button>
+          <div className="flex justify-center w-full">
+            <button 
+              onClick={() => handleSubmit()}
+              className="w-auto px-8 py-2 bg-stone-900 text-yellow-400 font-black text-base rounded-lg border-2 border-stone-800 shadow-[3px_3px_0px_0px_rgba(28,25,23,1)] hover:bg-stone-800 active:translate-y-0.5 active:shadow-none transition-all flex items-center justify-center gap-2"
+            >
+              <Check size={16} strokeWidth={4} />
+              ENTER
+            </button>
+          </div>
         </div>
 
         {/* History Stack - Most recent at top, moved below input */}
