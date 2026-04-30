@@ -1,0 +1,6 @@
+{
+  "name": "UNEMI Spelling Bee Trainer",
+  "description": "A high-performance spelling bee practice app with custom word lists, specialized mistake feedback, and multiple TTS voice options.",
+  "requestFramePermissions": [],
+  "majorCapabilities": []
+}
